@@ -21,6 +21,8 @@ pub fn start(canvas_id: &str) -> Result<(), eframe::wasm_bindgen::JsValue> {
     eframe::start_web(canvas_id, Box::new(Grapher::new()))
 }
 
+const EULER: &'static str = "2.7182818284590452353602874713527";
+
 #[derive(Clone, Debug)]
 pub struct Grapher {
     data: Vec<FunctionEntry>,
@@ -52,8 +54,11 @@ impl Grapher {
 
                 if changed {
                     self.error = None;
+                
+                    // for nathan
+                    let text = &entry.text.replace("e", EULER);
 
-                    entry.func = match exmex::parse::<f64>(&entry.text) {
+                    entry.func = match exmex::parse::<f64>(text) {
                         Ok(func) => Some(func),
                         Err(e) => {
                             self.error = Some(e.to_string());
