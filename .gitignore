@@ -1,2 +1,9 @@
 /target
 Cargo.lock
+/public/wasm/
+public/wasm/grapher_bg.wasm
+public/wasm/README.md
+public/wasm/grapher_bg.wasm.d.ts
+public/wasm/grapher.d.ts
+public/wasm/grapher.js
+public/wasm/package.json
