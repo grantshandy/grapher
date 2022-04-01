@@ -1,0 +1,12 @@
+{
+  "name": "grapher",
+  "version": "0.1.0",
+  "files": [
+    "grapher_bg.wasm",
+    "grapher.js",
+    "grapher.d.ts"
+  ],
+  "module": "grapher.js",
+  "types": "grapher.d.ts",
+  "sideEffects": false
+}
