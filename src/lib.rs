@@ -2,7 +2,7 @@ use eframe::{
     egui::{
         self,
         plot::{Legend, Line, Plot, Values},
-        ScrollArea, SidePanel, Slider, TextEdit, TextStyle,
+        ScrollArea, SidePanel, Slider, TextEdit, TextStyle, Frame, Style,
     },
     epaint::Vec2,
     epi::{self},
@@ -115,8 +115,9 @@ impl Grapher {
     fn graph(&mut self, ctx: &egui::Context) {
         let mut lines: Vec<Line> = Vec::new();
 
-        for (n, entry) in self.data.clone().into_iter().enumerate() {
+        for entry in self.data.clone().into_iter() {
             if let Some(func) = entry.func {
+                let name = format!("y = {}", entry.text.clone());
                 let values = Values::from_explicit_callback(
                     move |x| match func.eval(&[x]) {
                         Ok(y) => y,
@@ -133,13 +134,15 @@ impl Grapher {
                     self.points,
                 );
 
-                let line = Line::new(values).name((n + 1).to_string());
+                let line = Line::new(values).name(name);
 
                 lines.push(line);
             }
         }
 
-        egui::CentralPanel::default().show(ctx, |ui| {
+        let frame = Frame::window(&Style::default()).margin(Vec2 { x: 0.0, y: 0.0 });
+
+        egui::CentralPanel::default().frame(frame).show(ctx, |ui| {
             if let Some(error) = &self.error {
                 ui.centered_and_justified(|ui| {
                     ui.heading(format!("Error: {}", error));
