@@ -8,7 +8,7 @@ use eframe::{
     epaint::Vec2,
     epi::{self},
 };
-use exmex::{Express, FlatEx, ExError};
+use exmex::{Express, FlatEx};
 
 #[cfg(target_arch = "wasm32")]
 use eframe::wasm_bindgen::{self, prelude::*};
