@@ -1,9 +1,8 @@
 use eframe::{
     egui::{
         self,
-        panel::TopBottomSide,
-        plot::{Line, Plot, Values},
-        Frame, Style, TextEdit,
+        plot::{Legend, Line, Plot, Values},
+        ScrollArea, SidePanel, Slider, TextEdit, TextStyle,
     },
     epaint::Vec2,
     epi::{self},
@@ -27,6 +26,7 @@ const EULER: &'static str = "2.7182818284590452353602874713527";
 pub struct Grapher {
     data: Vec<FunctionEntry>,
     error: Option<String>,
+    points: usize,
 }
 
 impl Grapher {
@@ -34,50 +34,88 @@ impl Grapher {
         let mut data = Vec::new();
         data.push(FunctionEntry::new());
 
-        Self { data, error: None }
+        Self {
+            data,
+            error: None,
+            points: 500,
+        }
     }
 
     fn side_panel(&mut self, ctx: &egui::Context) {
-        egui::SidePanel::left("left_panel").show(ctx, |ui| {
-            ui.add_space(6.0);
-
-            for entry in self.data.iter_mut() {
-                let mut changed = false;
+        SidePanel::left("left_panel").show(ctx, |ui| {
+            ScrollArea::vertical().show(ui, |ui| {
+                ui.add_space(6.0);
+                ui.heading("Grapher");
+                ui.small("© 2022 Grant Handy");
+                ui.separator();
 
                 ui.horizontal(|ui| {
-                    ui.label("Function:");
+                    if ui.button("Add").clicked() {
+                        self.data.push(FunctionEntry::new());
+                    }
 
-                    if ui.add(TextEdit::singleline(&mut entry.text)).changed() {
-                        if entry.text != "" {
-                            changed = true;
-                        } else {
-                            entry.func = None;
-                        }
-                    };
+                    if self.data.len() > 1 && ui.button("Delete").clicked() {
+                        self.data.pop();
+                    }
                 });
+                ui.add_space(4.5);
 
-                if changed {
-                    self.error = None;
+                for (n, entry) in self.data.iter_mut().enumerate() {
+                    let mut changed = false;
 
-                    // for nathan
-                    let text = &entry.text.replace("e", EULER);
-
-                    entry.func = match exmex::parse::<f64>(text) {
-                        Ok(func) => Some(func),
-                        Err(e) => {
-                            self.error = Some(e.to_string());
-                            break;
-                        }
+                    let hint_text = match n {
+                        0 => "x^2",
+                        1 => "sin(x)",
+                        2 => "x+2",
+                        3 => "x*3",
+                        4 => "abs(x)",
+                        5 => "cos(x)",
+                        _ => "",
                     };
+
+                    ui.horizontal(|ui| {
+                        ui.label(format!("{}:", n + 1));
+
+                        if ui.add(TextEdit::singleline(&mut entry.text).hint_text(hint_text)).changed() {
+                            if entry.text != "" {
+                                changed = true;
+                            } else {
+                                entry.func = None;
+                            }
+                        };
+                    });
+
+                    if changed {
+                        self.error = None;
+
+                        // for nathan
+                        let text = &entry.text.replace("e", EULER);
+
+                        entry.func = match exmex::parse::<f64>(text) {
+                            Ok(func) => Some(func),
+                            Err(e) => {
+                                self.error = Some(e.to_string());
+                                break;
+                            }
+                        };
+                    }
                 }
-            }
+
+                ui.separator();
+                ui.add(Slider::new(&mut self.points, 10..=1000).text("Resolution"));
+                ui.separator();
+                ui.label("Grapher is a free and open source graphing calculator available online. Add functions on the left and they'll appear on the right in the graph.");
+                ui.label("Hold control and scroll to zoom and drag to move around the graph.");
+                ui.hyperlink_to("Source Code ", "https://github.com/grantshandy/grapher");
+                ui.separator();
+            });
         });
     }
 
     fn graph(&mut self, ctx: &egui::Context) {
         let mut lines: Vec<Line> = Vec::new();
 
-        for entry in self.data.clone() {
+        for (n, entry) in self.data.clone().into_iter().enumerate() {
             if let Some(func) = entry.func {
                 let values = Values::from_explicit_callback(
                     move |x| match func.eval(&[x]) {
@@ -92,10 +130,10 @@ impl Grapher {
                         }
                     },
                     ..,
-                    512,
+                    self.points,
                 );
 
-                let line = Line::new(values);
+                let line = Line::new(values).name((n + 1).to_string());
 
                 lines.push(line);
             }
@@ -107,11 +145,14 @@ impl Grapher {
                     ui.heading(format!("Error: {}", error));
                 });
             } else {
-                Plot::new("grapher").show(ui, |plot_ui| {
-                    for line in lines {
-                        plot_ui.line(line);
-                    }
-                });
+                Plot::new("grapher")
+                    .legend(Legend::default().text_style(TextStyle::Heading))
+                    .data_aspect(1.0)
+                    .show(ui, |plot_ui| {
+                        for line in lines {
+                            plot_ui.line(line);
+                        }
+                    });
             }
         });
     }
@@ -122,6 +163,7 @@ impl epi::App for Grapher {
         "Grapher"
     }
 
+    // imma assume you aren't this rich
     fn max_size_points(&self) -> Vec2 {
         Vec2 {
             x: 4096.0,
@@ -130,30 +172,7 @@ impl epi::App for Grapher {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
-        let frame = Frame::window(&Style::default()).margin(Vec2 { x: 10.0, y: 10.0 });
-
-        egui::TopBottomPanel::new(TopBottomSide::Top, "top_panel")
-            .frame(frame)
-            .show(ctx, |ui| {
-                ui.horizontal(|ui| {
-                    ui.heading("Grapher");
-
-                    if ui.button("Add Function").clicked() {
-                        self.data.push(FunctionEntry::new());
-                    }
-
-                    if ui.button("Remove Function").clicked() {
-                        self.data.pop();
-                    }
-
-                    ui.label("Copyright 2022 Grant Handy");
-                })
-            });
-
-        if !self.data.is_empty() {
-            self.side_panel(ctx);
-        }
-
+        self.side_panel(ctx);
         self.graph(ctx);
     }
 }

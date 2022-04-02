@@ -12,3 +12,6 @@ crate-type = ["cdylib", "rlib"]
 console_error_panic_hook = "0.1"
 eframe = "0.17"
 exmex = "0.15"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
