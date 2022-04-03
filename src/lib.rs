@@ -2,9 +2,10 @@ use eframe::{
     egui::{
         self,
         plot::{Legend, Line, Plot, Values},
-        ScrollArea, SidePanel, Slider, TextEdit, TextStyle, Frame, Style,
+        CollapsingHeader, Frame, RichText, ScrollArea, SidePanel, Slider, Style, TextEdit,
+        TextStyle, Visuals,
     },
-    epaint::Vec2,
+    epaint::{Color32, Vec2},
     epi::{self},
 };
 use exmex::{Express, FlatEx};
@@ -21,6 +22,27 @@ pub fn start(canvas_id: &str) -> Result<(), eframe::wasm_bindgen::JsValue> {
 }
 
 const EULER: &'static str = "2.7182818284590452353602874713527";
+
+const COLORS: &'static [Color32; 18] = &[
+    Color32::RED,
+    Color32::GREEN,
+    Color32::YELLOW,
+    Color32::BLUE,
+    Color32::BROWN,
+    Color32::GOLD,
+    Color32::GRAY,
+    Color32::WHITE,
+    Color32::LIGHT_YELLOW,
+    Color32::LIGHT_GREEN,
+    Color32::LIGHT_BLUE,
+    Color32::LIGHT_GRAY,
+    Color32::LIGHT_RED,
+    Color32::DARK_GRAY,
+    Color32::DARK_RED,
+    Color32::KHAKI,
+    Color32::DARK_GREEN,
+    Color32::DARK_BLUE,
+];
 
 #[derive(Clone, Debug)]
 pub struct Grapher {
@@ -49,8 +71,8 @@ impl Grapher {
                 ui.small("© 2022 Grant Handy");
                 ui.separator();
 
-                ui.horizontal(|ui| {
-                    if ui.button("Add").clicked() {
+                ui.horizontal_top(|ui| {
+                    if self.data.len() < 18 && ui.button("Add").clicked() {
                         self.data.push(FunctionEntry::new());
                     }
 
@@ -74,7 +96,7 @@ impl Grapher {
                     };
 
                     ui.horizontal(|ui| {
-                        ui.label(format!("{}:", n + 1));
+                        ui.label(RichText::new(" ").strong().background_color(COLORS[n]));
 
                         if ui.add(TextEdit::singleline(&mut entry.text).hint_text(hint_text)).changed() {
                             if entry.text != "" {
@@ -82,7 +104,7 @@ impl Grapher {
                             } else {
                                 entry.func = None;
                             }
-                        };
+                        }
                     });
 
                     if changed {
@@ -95,19 +117,21 @@ impl Grapher {
                             Ok(func) => Some(func),
                             Err(e) => {
                                 self.error = Some(e.to_string());
-                                break;
+                                continue;
                             }
                         };
                     }
                 }
 
                 ui.separator();
-                ui.add(Slider::new(&mut self.points, 10..=1000).text("Resolution"));
-                ui.separator();
                 ui.label("Grapher is a free and open source graphing calculator available online. Add functions on the left and they'll appear on the right in the graph.");
                 ui.label("Hold control and scroll to zoom and drag to move around the graph.");
                 ui.hyperlink_to("Source Code ", "https://github.com/grantshandy/grapher");
                 ui.separator();
+                CollapsingHeader::new("Settings").show(ui, |ui| {
+                    ui.add(Slider::new(&mut self.points, 10..=1000).text("Resolution"));
+                    ui.label("Set to a lower resolution for better performance and a higher resolution for more accuracy. It's also pretty funny if you bring it down ridiculously low.");
+                });
             });
         });
     }
@@ -115,7 +139,7 @@ impl Grapher {
     fn graph(&mut self, ctx: &egui::Context) {
         let mut lines: Vec<Line> = Vec::new();
 
-        for entry in self.data.clone().into_iter() {
+        for (n, entry) in self.data.clone().into_iter().enumerate() {
             if let Some(func) = entry.func {
                 let name = format!("y = {}", entry.text.clone());
                 let values = Values::from_explicit_callback(
@@ -134,7 +158,7 @@ impl Grapher {
                     self.points,
                 );
 
-                let line = Line::new(values).name(name);
+                let line = Line::new(values).name(name).color(COLORS[n]);
 
                 lines.push(line);
             }
@@ -149,7 +173,7 @@ impl Grapher {
                 });
             } else {
                 Plot::new("grapher")
-                    .legend(Legend::default().text_style(TextStyle::Heading))
+                    .legend(Legend::default().text_style(TextStyle::Body))
                     .data_aspect(1.0)
                     .show(ui, |plot_ui| {
                         for line in lines {
@@ -175,6 +199,8 @@ impl epi::App for Grapher {
     }
 
     fn update(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
+        ctx.set_visuals(Visuals::dark());
+
         self.side_panel(ctx);
         self.graph(ctx);
     }
