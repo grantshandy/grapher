@@ -10,18 +10,12 @@ use eframe::{
 };
 use exmex::{Express, FlatEx};
 
-#[cfg(target_arch = "wasm32")]
-use eframe::wasm_bindgen::{self, prelude::*};
+mod web;
 
 #[cfg(target_arch = "wasm32")]
-#[wasm_bindgen]
-pub fn start(canvas_id: &str) -> Result<(), eframe::wasm_bindgen::JsValue> {
-    console_error_panic_hook::set_once();
+pub use web::start_web;
 
-    eframe::start_web(canvas_id, Box::new(Grapher::new()))
-}
-
-const EULER: &'static str = "2.7182818284590452353602874713527";
+pub const EULER: &'static str = "2.7182818284590452353602874713527";
 
 const COLORS: &'static [Color32; 18] = &[
     Color32::RED,
@@ -54,11 +48,22 @@ pub struct Grapher {
 impl Grapher {
     pub fn new() -> Self {
         let mut data = Vec::new();
-        data.push(FunctionEntry::new());
+
+        cfg_if::cfg_if! {
+            if #[cfg(target_arch = "wasm32")] {
+                let error: Option<String> = web::get_data_from_url(&mut data);
+            } else {
+                let error: Option<String> = None;
+            }
+        }
+
+        if data.is_empty() {
+            data.push(FunctionEntry::new());
+        }
 
         Self {
             data,
-            error: None,
+            error,
             points: 500,
         }
     }
@@ -69,6 +74,7 @@ impl Grapher {
                 ui.add_space(6.0);
                 ui.heading("Grapher");
                 ui.small("© 2022 Grant Handy");
+
                 ui.separator();
 
                 ui.horizontal_top(|ui| {
@@ -80,10 +86,13 @@ impl Grapher {
                         self.data.pop();
                     }
                 });
+
                 ui.add_space(4.5);
 
+                let mut outer_changed = false;
+
                 for (n, entry) in self.data.iter_mut().enumerate() {
-                    let mut changed = false;
+                    let mut inner_changed = false;
 
                     let hint_text = match n {
                         0 => "x^2",
@@ -92,6 +101,7 @@ impl Grapher {
                         3 => "x*3",
                         4 => "abs(x)",
                         5 => "cos(x)",
+                        // most people won't go past 5 so i'll be lazy
                         _ => "",
                     };
 
@@ -100,20 +110,20 @@ impl Grapher {
 
                         if ui.add(TextEdit::singleline(&mut entry.text).hint_text(hint_text)).changed() {
                             if entry.text != "" {
-                                changed = true;
+                                inner_changed = true;
                             } else {
                                 entry.func = None;
                             }
+
+                            outer_changed = true;
                         }
                     });
 
-                    if changed {
+                    if inner_changed {
                         self.error = None;
 
                         // for nathan
-                        let text = &entry.text.replace("e", EULER);
-
-                        entry.func = match exmex::parse::<f64>(text) {
+                        entry.func = match exmex::parse::<f64>(&entry.text.replace("e", EULER)) {
                             Ok(func) => Some(func),
                             Err(e) => {
                                 self.error = Some(e.to_string());
@@ -123,11 +133,26 @@ impl Grapher {
                     }
                 }
 
+                #[cfg(target_arch = "wasm32")]
+                if outer_changed {
+                    web::update_url(&self.data);
+                }
+
                 ui.separator();
                 ui.label("Grapher is a free and open source graphing calculator available online. Add functions on the left and they'll appear on the right in the graph.");
                 ui.label("Hold control and scroll to zoom and drag to move around the graph.");
                 ui.hyperlink_to("Source Code ", "https://github.com/grantshandy/grapher");
+                #[cfg(target_arch = "x86_64")]
+                ui.hyperlink_to("View Graph Online", {
+                    let mut base_url = "https://grantshandy.github.io/grapher/".to_string();
+                    base_url.push_str(&web::url_string_from_data(&self.data));
+
+                    base_url
+                });
+                #[cfg(target_arch = "wasm32")]
+                ui.hyperlink_to("Download for Desktop", "https://github.com/grantshandy/grapher/releases");
                 ui.separator();
+
                 CollapsingHeader::new("Settings").show(ui, |ui| {
                     ui.add(Slider::new(&mut self.points, 10..=1000).text("Resolution"));
                     ui.label("Set to a lower resolution for better performance and a higher resolution for more accuracy. It's also pretty funny if you bring it down ridiculously low.");
@@ -185,12 +210,18 @@ impl Grapher {
     }
 }
 
+impl Default for Grapher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl epi::App for Grapher {
     fn name(&self) -> &str {
         "Grapher"
     }
 
-    // imma assume you aren't this rich
+    // imma assume you aren't this cool
     fn max_size_points(&self) -> Vec2 {
         Vec2 {
             x: 4096.0,
@@ -206,8 +237,9 @@ impl epi::App for Grapher {
     }
 }
 
+/// An entry in the sidebar
 #[derive(Clone, Debug)]
-struct FunctionEntry {
+pub struct FunctionEntry {
     pub text: String,
     pub func: Option<FlatEx<f64>>,
 }
