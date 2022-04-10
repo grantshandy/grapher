@@ -60,6 +60,10 @@ pub fn get_data_from_url(data: &mut Vec<FunctionEntry>) -> Option<String> {
         None => return None,
     };
 
+    if func_string == "" {
+        return None;
+    }
+
     let mut error: Option<String> = None;
 
     for entry in func_string.split(',') {
