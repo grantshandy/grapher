@@ -2,6 +2,7 @@
 name = "grapher"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -9,10 +10,17 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-cfg-if = "1.0.0"
 eframe = "0.17"
 exmex = "0.15"
+cfg-if = "1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-sys = { version = "0.3", features = ["Window", "Location", "History"] }
 console_error_panic_hook = "0.1"
+
+[target.'cfg(target_os = "windows")'.build-dependencies]
+winres = "0.1"
+
+[package.metadata.winres]
+OriginalFilename = "grapher.exe"
+LegalCopyright = "Copyright © 2022 Grant Handy"
