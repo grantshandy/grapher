@@ -142,7 +142,7 @@ impl Grapher {
                 ui.label("Grapher is a free and open source graphing calculator available online. Add functions on the left and they'll appear on the right in the graph.");
                 ui.label("Hold control and scroll to zoom and drag to move around the graph.");
                 ui.hyperlink_to("Source Code ", "https://github.com/grantshandy/grapher");
-                #[cfg(target_arch = "x86_64")]
+                #[cfg(not(target_arch = "wasm32"))]
                 ui.hyperlink_to("View Graph Online", {
                     let mut base_url = "https://grantshandy.github.io/grapher/".to_string();
                     base_url.push_str(&web::url_string_from_data(&self.data));

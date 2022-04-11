@@ -1,7 +1,14 @@
 [package]
 name = "grapher"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
+authors = ["Grant Handy <grantshandy@gmail.com>"]
+description = "A simple graphing calculator written in Rust."
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/grantshandy/grapher"
+categories = ["gui"]
+keywords = ["gui", "graph", "math"]
 build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
