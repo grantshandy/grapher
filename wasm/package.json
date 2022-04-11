@@ -1,6 +1,15 @@
 {
   "name": "grapher",
-  "version": "0.1.0",
+  "collaborators": [
+    "Grant Handy <grantshandy@gmail.com>"
+  ],
+  "description": "A simple graphing calculator written in Rust.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/grantshandy/grapher"
+  },
   "files": [
     "grapher_bg.wasm",
     "grapher.js",
@@ -8,5 +17,10 @@
   ],
   "module": "grapher.js",
   "types": "grapher.d.ts",
-  "sideEffects": false
+  "sideEffects": false,
+  "keywords": [
+    "gui",
+    "graph",
+    "math"
+  ]
 }
