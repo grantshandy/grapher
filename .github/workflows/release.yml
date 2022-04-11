@@ -9,10 +9,9 @@ on:
     ## - release
 
 env:
-  BIN_NAME: bfoot
-  PROJECT_NAME: bumblefoot
-  REPO_NAME: spectralops/rust-ci-release-template
-  BREW_TAP: jondot/homebrew-tap
+  BIN_NAME: grapher
+  PROJECT_NAME: grapher
+  REPO_NAME: grantshandy/grapher
 
 jobs:
   dist:
