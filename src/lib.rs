@@ -77,19 +77,21 @@ impl Grapher {
 
                 ui.separator();
 
+                let mut outer_changed = false;
+
                 ui.horizontal_top(|ui| {
                     if self.data.len() < 18 && ui.button("Add").clicked() {
                         self.data.push(FunctionEntry::new());
+                        outer_changed = true;
                     }
 
                     if self.data.len() > 1 && ui.button("Delete").clicked() {
                         self.data.pop();
+                        outer_changed = true;
                     }
                 });
 
                 ui.add_space(4.5);
-
-                let mut outer_changed = false;
 
                 for (n, entry) in self.data.iter_mut().enumerate() {
                     let mut inner_changed = false;
