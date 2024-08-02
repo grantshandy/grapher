@@ -1,13 +1,12 @@
 use eframe::{
     egui::{
-        self,
-        plot::{Legend, Line, Plot, Values},
-        CollapsingHeader, Frame, RichText, ScrollArea, SidePanel, Slider, Style, TextEdit,
+        self, CollapsingHeader, Frame, RichText, ScrollArea, SidePanel, Slider, Style, TextEdit,
         TextStyle, Visuals,
     },
     epaint::{Color32, Vec2},
-    epi::{self},
+    App,
 };
+use egui_plot::{Legend, Line, Plot, PlotPoints};
 use exmex::{Express, FlatEx};
 
 mod web;
@@ -169,7 +168,7 @@ impl Grapher {
         for (n, entry) in self.data.clone().into_iter().enumerate() {
             if let Some(func) = entry.func {
                 let name = format!("y = {}", entry.text.clone());
-                let values = Values::from_explicit_callback(
+                let values = PlotPoints::from_explicit_callback(
                     move |x| match func.eval(&[x]) {
                         Ok(y) => y,
                         Err(e) => {
@@ -191,7 +190,7 @@ impl Grapher {
             }
         }
 
-        let frame = Frame::window(&Style::default()).margin(Vec2 { x: 0.0, y: 0.0 });
+        let frame = Frame::window(&Style::default()).inner_margin(Vec2 { x: 0.0, y: 0.0 });
 
         egui::CentralPanel::default().frame(frame).show(ctx, |ui| {
             if let Some(error) = &self.error {
@@ -218,20 +217,8 @@ impl Default for Grapher {
     }
 }
 
-impl epi::App for Grapher {
-    fn name(&self) -> &str {
-        "Grapher"
-    }
-
-    // imma assume you aren't this cool
-    fn max_size_points(&self) -> Vec2 {
-        Vec2 {
-            x: 4096.0,
-            y: 2160.0,
-        }
-    }
-
-    fn update(&mut self, ctx: &egui::Context, _frame: &epi::Frame) {
+impl App for Grapher {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.set_visuals(Visuals::dark());
 
         self.side_panel(ctx);

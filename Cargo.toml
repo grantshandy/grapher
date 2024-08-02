@@ -17,8 +17,9 @@ build = "build.rs"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-eframe = "0.17"
-exmex = "0.15"
+eframe = "0.28"
+egui_plot = "0.28"
+exmex = "0.20"
 cfg-if = "1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
